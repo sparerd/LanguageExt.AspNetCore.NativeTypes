@@ -3,9 +3,12 @@ using LanguageExt.AspNetCore.NativeTypes.JsonConversion.Option;
 using LanguageExt.AspNetCore.NativeTypes.JsonConversion.Seq;
 using LanguageExt.AspNetCore.NativeTypes.ModelBinders.Option;
 using LanguageExt.AspNetCore.NativeTypes.ModelBinders.Seq;
+using LanguageExt.AspNetCore.NativeTypes.OutputFormatters;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.Extensions.DependencyInjection;
+using static LanguageExt.AspNetCore.NativeTypes.OutputFormatters.OutputFormat;
 using static LanguageExt.Prelude;
 using JsonOptions = Microsoft.AspNetCore.Http.Json.JsonOptions;
 
@@ -42,6 +45,36 @@ public static class ServiceExtensions
 				ConfigureModelBinders(langExtOptions, o.ModelBinderProviders);
 			});
 	}
+
+	/// <summary>
+	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
+	/// controller endpoint methods directly.
+	/// Uses the default exception handling logic to convert failures into <see cref="IActionResult"/>.
+	/// </summary>
+	/// <param name="builder"></param>
+	/// <returns></returns>
+	public static IMvcBuilder AddEffAffEndpointSupport(this IMvcBuilder builder) =>
+		AddEffAffEndpointSupport(builder, DefaultErrorHandler);
+
+	/// <summary>
+	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
+	/// controller endpoint methods directly.
+	/// </summary>
+	/// <param name="builder"></param>
+	/// <param name="unwrapper">
+	/// A custom unwrapping function to convert <see cref="Fin{A}"/> to <see cref="IActionResult"/>.
+	/// Use this to customize how failures are converted into <see cref="IActionResult"/>.
+	/// </param>
+	/// <returns></returns>
+	public static IMvcBuilder AddEffAffEndpointSupport(
+		this IMvcBuilder builder,
+		Func<Fin<IActionResult>, IActionResult> unwrapper
+	) =>
+		builder.AddMvcOptions(options =>
+		{
+			options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetEffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Eff<>))));
+			options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetAffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Aff<>))));
+		});
 
 	private static void ConfigureJson(IMvcBuilder builder, LanguageExtAspNetCoreOptions langExtOptions)
 	{

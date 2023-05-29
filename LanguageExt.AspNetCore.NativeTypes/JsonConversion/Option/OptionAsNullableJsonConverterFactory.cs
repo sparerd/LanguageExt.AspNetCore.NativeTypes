@@ -26,5 +26,5 @@ public class OptionAsNullableJsonConverterFactory : JsonConverterFactory
 
 	private static Option<JsonConverter> NewNoneConverter(Type typeToConvert) =>
 		from noneType in Some(typeToConvert).Filter(type => type == typeof(OptionNone))
-		select new OptionAsNullableJsonConverter() as JsonConverter;
+		select new OptionNoneAsNullableJsonConverter() as JsonConverter;
 }

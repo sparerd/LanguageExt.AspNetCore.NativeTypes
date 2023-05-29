@@ -11,8 +11,8 @@
     <PackageReference Include="FluentAssertions.LanguageExt" Version="0.4.0" />
     <PackageReference Include="Flurl.Http" Version="3.2.4" />
     <PackageReference Include="NUnit" Version="3.13.3" />
-    <PackageReference Include="NUnit3TestAdapter" Version="4.3.1" />
-    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.4.1" />
+    <PackageReference Include="NUnit3TestAdapter" Version="4.5.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.6.2" />
   </ItemGroup>
 
   <ItemGroup>

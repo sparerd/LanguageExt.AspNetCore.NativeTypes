@@ -1,4 +1,6 @@
-﻿using Flurl.Http;
+﻿using System.Text.Json;
+using Flurl.Http;
+using Flurl.Http.Configuration;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
@@ -27,7 +29,10 @@ public static class TestPrelude
 				services
 					.AddMvc()
 					.AddApplicationPart(typeof(TestPrelude).Assembly)
-					.AddLanguageExtTypeSupport(options);
+					.AddLanguageExtTypeSupport(options)
+					.AddEffAffEndpointSupport()
+					.AddJsonOptions(o => o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
+					;
 			}); 
 		var app = builder.Build();
 		app.MapControllers();
@@ -37,11 +42,20 @@ public static class TestPrelude
 	public static IFlurlRequest Request(this WebApplication app)
 	{
 		var client = new FlurlClient(app.Urls.First());
-		client.Settings.JsonSerializer = new FlurlSystemTextJsonSerializerAdapter(ServiceExtensions.LanguageExtSerializer(
-			app.Services.GetRequiredService<LanguageExtAspNetCoreOptions>()));
+		var options = app.Services.GetRequiredService<LanguageExtAspNetCoreOptions>();
+		client.Settings.JsonSerializer = SetupFlurlSerializer(options);
+		client.Settings.AllowedHttpStatusRange = "*";
 		return client.Request();
 	}
 
+	private static ISerializer SetupFlurlSerializer(LanguageExtAspNetCoreOptions options)
+	{
+		var sysTextJsonOptions = new JsonSerializerOptions
+		{
+			PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+		}.AddLanguageExtSupport(options);
+		return new FlurlSystemTextJsonSerializerAdapter(sysTextJsonOptions);
+	}
 
 	public static int Increment(Option<int> num) => num.Match(i => i + 1, () => 0);
 
