@@ -74,6 +74,7 @@ public static class ServiceExtensions
 		{
 			options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetEffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Eff<>))));
 			options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetAffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Aff<>))));
+			options.OutputFormatters.Insert(0, new OptionOutputFormatter());
 		});
 
 	private static void ConfigureJson(IMvcBuilder builder, LanguageExtAspNetCoreOptions langExtOptions)
