@@ -1,6 +1,6 @@
 # LanguageExt.AspNetCore.NativeTypes
 Extensions and middleware for ASP.NET Core that allow you to use LanguageExt types directly in controllers.
-The 3 main goals of this library are enable:
+The 3 main goals of this library are to enable:
 - Model binding support for LanguageExt types in controller methods
 - Configurable JSON serialization support for LanguageExt types
     - Currently, there is only support for `System.Text.Json`. 
