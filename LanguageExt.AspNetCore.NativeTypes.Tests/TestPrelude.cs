@@ -21,7 +21,7 @@ public static class TestPrelude
 	public static WebApplication CreateWebHost(LanguageExtAspNetCoreOptions options)
 	{
 		var builder = WebApplication.CreateBuilder();
-		builder.Logging.SetMinimumLevel(LogLevel.Trace);
+		builder.Logging.SetMinimumLevel(LogLevel.Warning);
 		builder.Services.AddControllers();
 		builder.WebHost
 			.ConfigureServices(services =>
