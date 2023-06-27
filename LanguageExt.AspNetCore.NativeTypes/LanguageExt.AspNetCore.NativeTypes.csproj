@@ -1,17 +1,43 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net6.0</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <Version>0.0.1</Version>
+
+    <!-- Nuget Package Settings -->
+    <PackageId>LanguageExt.AspNetCore.NativeTypes</PackageId>
+    <Description>
+      Extensions and middleware for ASP.NET Core that allow you to use LanguageExt types directly in controllers.
+      - Enables types such as Option&lt;T&gt;, Seq&lt;T&gt;, Lst&lt;T&gt; to be used as controller arguments.
+      - Enables returning types such as Option&lt;T&gt; or Eff/Aff&lt;T&gt; directly from controller methods to be run and converted into REST responses.
+      - Enables controlling System.Text.Json conversion of LanguageExt types
+    </Description>
+    <Authors>David Sparer</Authors>
+    <PackageProjectUrl>https://github.com/sparerd/LanguageExt.AspNetCore.NativeTypes</PackageProjectUrl>
+    <PackageTags>LanguageExt;aspnetcore;functional;web</PackageTags>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+    <PackageReadmeFile>readme.md</PackageReadmeFile>
+    <EnablePackageValidation>true</EnablePackageValidation>
+    <GenerateDocumentationFile>True</GenerateDocumentationFile>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="LanguageExt.Core" Version="4.4.3" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All"/>
   </ItemGroup>
 
   <ItemGroup>
     <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="..\readme.md" Pack="true" PackagePath="\" />
   </ItemGroup>
 
 </Project>
