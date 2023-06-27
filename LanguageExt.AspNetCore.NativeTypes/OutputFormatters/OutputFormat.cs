@@ -27,7 +27,7 @@ public static class OutputFormat
 		Eff(() => (IActionResult)typeof(OutputFormat)
 			.GetMethod(nameof(RunEff), BindingFlags.Static | BindingFlags.NonPublic)!
 			.MakeGenericMethod(context.ObjectType!.GetGenericArguments()[0])
-			.Invoke(null, new[] { context.Object, unwrapper })!);
+			.Invoke(null, new object[] { Optional(context.Object), unwrapper })!);
 
 	public static Aff<IActionResult> GetAffResult(
 		Func<Fin<IActionResult>, IActionResult> unwrapper, 
@@ -36,11 +36,12 @@ public static class OutputFormat
 		Aff(() => (ValueTask<IActionResult>)typeof(OutputFormat)
 			.GetMethod(nameof(RunAff), BindingFlags.Static | BindingFlags.NonPublic)!
 			.MakeGenericMethod(context.ObjectType!.GetGenericArguments()[0])
-			.Invoke(null, new[] { context.Object, unwrapper })!);
+			.Invoke(null, new object[] { Optional(context.Object), unwrapper })!);
 
-	private static IActionResult RunEff<T>(object effect, Func<Fin<IActionResult>, IActionResult> unwrapper)
+	private static IActionResult RunEff<T>(Option<object> optEffect, Func<Fin<IActionResult>, IActionResult> unwrapper)
 	{
 		var eff =
+			from effect in optEffect.ToEff(new BottomError())
 			from e in EnsureEffReturnsActionResult<T>(effect)
 			from _ in guardnot(e == null, Errors.Bottom)
 			select e;
@@ -56,9 +57,10 @@ public static class OutputFormat
 			_ => FailEff<IActionResult>(new BottomError()),
 		};
 
-	private static async ValueTask<IActionResult> RunAff<T>(object effect, Func<Fin<IActionResult>, IActionResult> unwrapper)
+	private static async ValueTask<IActionResult> RunAff<T>(Option<object> optEffect, Func<Fin<IActionResult>, IActionResult> unwrapper)
 	{
 		var aff =
+			from effect in optEffect.ToEff(new BottomError())
 			from e in EnsureAffReturnsActionResult<T>(effect)
 			from _ in guardnot(e == null, Errors.Bottom)
 			select e;
