@@ -1,4 +1,6 @@
 # LanguageExt.AspNetCore.NativeTypes
+[![NuGet Badge](https://buildstats.info/nuget/LanguageExt.AspNetCore.NativeTypes)](https://www.nuget.org/packages/LanguageExt.AspNetCore.NativeTypes/)
+
 Extensions and middleware for ASP.NET Core that allow you to use LanguageExt types directly in controllers.
 The 3 main goals of this library are to enable:
 - Model binding support for LanguageExt types in controller methods
@@ -16,7 +18,10 @@ The 3 main goals of this library are to enable:
 **I've made this mostly to satisfy my own curiosity in how far we can push non-functional code to the edges in C#/AspNetCore.**
 
 # Installation
-**TODO: Add nuget package install note once published**
+Add the nuget package to your project
+```
+dotnet add package LanguageExt.AspNetCore.NativeTypes
+```
 
 Call `AddLanguageExtTypeSupport()` after `AddMvc()` within your `ConfigureServices()` method to enable support for LanguageExt types.
 
