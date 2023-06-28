@@ -50,6 +50,8 @@ jobs:
         path: ${{ env.BuildDirectory }}
     - name: Setup .NET
       uses: actions/setup-dotnet@v3
+    - name: Restore
+      run: dotnet restore
     - name: Package
       run: dotnet pack --configuration Release --no-build --output "${{ env.NuGetDirectory }}"
     - uses: actions/upload-artifact@v3
