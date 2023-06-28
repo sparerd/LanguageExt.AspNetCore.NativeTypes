@@ -12,7 +12,7 @@ on:
 env:
   DOTNET_SKIP_FIRST_TIME_EXPERIENCE: 1
   DOTNET_NOLOGO: true
-  BuildDirectory: ${{ github.workspace }}/LanguageExt.AspNetCore.NativeTypes/LanguageExt.AspNetCore.NativeTypes/bin/Release
+  BuildDirectory: ${{ github.workspace }}/bin/Release
   NuGetDirectory: ${{ github.workspace }}/nuget
 
 defaults:
