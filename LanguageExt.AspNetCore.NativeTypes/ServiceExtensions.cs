@@ -17,6 +17,68 @@ namespace LanguageExt.AspNetCore.NativeTypes;
 public static class ServiceExtensions
 {
 	/// <summary>
+	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
+	/// controller endpoint methods directly.
+	/// Uses the default exception handling logic to convert failures into <see cref="IActionResult"/>.
+	/// </summary>
+	/// <param name="builder"></param>
+	/// <returns></returns>
+	public static IMvcBuilder AddEffAffEndpointSupport(this IMvcBuilder builder) =>
+		AddEffAffEndpointSupport(builder, DefaultErrorHandler);
+
+	/// <summary>
+	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
+	/// controller endpoint methods directly.
+	/// Uses the default exception handling logic to convert failures into <see cref="IActionResult"/>.
+	/// </summary>
+	/// <param name="builder"></param>
+	/// <returns></returns>
+	public static IMvcCoreBuilder AddEffAffEndpointSupport(this IMvcCoreBuilder builder) =>
+		AddEffAffEndpointSupport(builder, DefaultErrorHandler);
+
+	/// <summary>
+	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
+	/// controller endpoint methods directly.
+	/// </summary>
+	/// <param name="builder"></param>
+	/// <param name="unwrapper">
+	/// A custom unwrapping function to convert <see cref="Fin{A}"/> to <see cref="IActionResult"/>.
+	/// Use this to customize how failures are converted into <see cref="IActionResult"/>.
+	/// </param>
+	/// <returns></returns>
+	public static IMvcCoreBuilder AddEffAffEndpointSupport(
+		this IMvcCoreBuilder builder,
+		Func<Fin<IActionResult>, IActionResult> unwrapper
+	) =>
+		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper));
+
+	/// <summary>
+	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
+	/// controller endpoint methods directly.
+	/// </summary>
+	/// <param name="builder"></param>
+	/// <param name="unwrapper">
+	/// A custom unwrapping function to convert <see cref="Fin{A}"/> to <see cref="IActionResult"/>.
+	/// Use this to customize how failures are converted into <see cref="IActionResult"/>.
+	/// </param>
+	/// <returns></returns>
+	public static IMvcBuilder AddEffAffEndpointSupport(
+		this IMvcBuilder builder,
+		Func<Fin<IActionResult>, IActionResult> unwrapper
+	) =>
+		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper));
+
+	public static MvcOptions AddEffAffEndpointSupport(
+		this MvcOptions options,
+		Func<Fin<IActionResult>, IActionResult> unwrapper)
+	{
+		options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetEffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Eff<>))));
+		options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetAffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Aff<>))));
+		options.OutputFormatters.Insert(0, new OptionOutputFormatter());
+		return options;
+	}
+
+	/// <summary>
 	/// 
 	/// </summary>
 	/// <param name="builder"></param>
@@ -34,58 +96,52 @@ public static class ServiceExtensions
 	public static IMvcBuilder AddLanguageExtTypeSupport(
 		this IMvcBuilder builder,
 		LanguageExtAspNetCoreOptions langExtOptions
-	)
-	{
-		builder.Services.AddSingleton(langExtOptions);
-		ConfigureJson(builder, langExtOptions);
+	) =>
+		AddTypeSupport(
+			builder.Services,
+			cfg => ignore(builder.AddMvcOptions(cfg)),
+			opts => ignore(builder.AddJsonOptions(opts)),
+			langExtOptions
+		).Return(builder);
 
-		return builder
-			.AddMvcOptions(o =>
-			{
-				ConfigureModelBinders(langExtOptions, o.ModelBinderProviders);
-			});
+	public static IMvcCoreBuilder AddLanguageExtTypeSupport(this IMvcCoreBuilder builder) =>
+		AddLanguageExtTypeSupport(builder, new LanguageExtAspNetCoreOptions());
+
+	public static IMvcCoreBuilder AddLanguageExtTypeSupport(
+		this IMvcCoreBuilder builder,
+		LanguageExtAspNetCoreOptions langExtOptions
+	) =>
+		AddTypeSupport(
+			builder.Services,
+			cfg => ignore(builder.AddMvcOptions(cfg)),
+			opts => ignore(builder.AddJsonOptions(opts)),
+			langExtOptions
+		).Return(builder);
+
+	private static Unit AddTypeSupport(
+		IServiceCollection services,
+		Func<Action<MvcOptions>, Unit> mvcOptsConfig,
+		Func<Action<Microsoft.AspNetCore.Mvc.JsonOptions>, Unit> jsonCfg,
+		LanguageExtAspNetCoreOptions langExtOptions)
+	{
+		services.AddSingleton(langExtOptions);
+		ConfigureJson(services, jsonCfg, langExtOptions);
+		mvcOptsConfig(o => ConfigureModelBinders(langExtOptions, o.ModelBinderProviders));
+		return unit;
 	}
 
-	/// <summary>
-	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
-	/// controller endpoint methods directly.
-	/// Uses the default exception handling logic to convert failures into <see cref="IActionResult"/>.
-	/// </summary>
-	/// <param name="builder"></param>
-	/// <returns></returns>
-	public static IMvcBuilder AddEffAffEndpointSupport(this IMvcBuilder builder) =>
-		AddEffAffEndpointSupport(builder, DefaultErrorHandler);
-
-	/// <summary>
-	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
-	/// controller endpoint methods directly.
-	/// </summary>
-	/// <param name="builder"></param>
-	/// <param name="unwrapper">
-	/// A custom unwrapping function to convert <see cref="Fin{A}"/> to <see cref="IActionResult"/>.
-	/// Use this to customize how failures are converted into <see cref="IActionResult"/>.
-	/// </param>
-	/// <returns></returns>
-	public static IMvcBuilder AddEffAffEndpointSupport(
-		this IMvcBuilder builder,
-		Func<Fin<IActionResult>, IActionResult> unwrapper
-	) =>
-		builder.AddMvcOptions(options =>
-		{
-			options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetEffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Eff<>))));
-			options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetAffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Aff<>))));
-			options.OutputFormatters.Insert(0, new OptionOutputFormatter());
-		});
-
-	private static void ConfigureJson(IMvcBuilder builder, LanguageExtAspNetCoreOptions langExtOptions)
+	private static void ConfigureJson(
+		IServiceCollection services,
+		Func<Action<Microsoft.AspNetCore.Mvc.JsonOptions>, Unit> jsonCfg,
+		LanguageExtAspNetCoreOptions langExtOptions)
 	{
 		void Conf(JsonSerializerOptions options) => options.AddLanguageExtSupport(langExtOptions);
-
+		
 		// Used by minimal api
-		builder.Services.Configure<JsonOptions>(o => Conf(o.SerializerOptions));
+		services.Configure<JsonOptions>(o => Conf(o.SerializerOptions));
 
 		// Used by controllers
-		builder.AddJsonOptions(o => Conf(o.JsonSerializerOptions));
+		jsonCfg(o => Conf(o.JsonSerializerOptions));
 	}
 
 	private static Unit ConfigureModelBinders(LanguageExtAspNetCoreOptions options, IList<IModelBinderProvider> providers) =>
