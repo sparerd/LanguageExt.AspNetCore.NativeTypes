@@ -94,6 +94,6 @@ public static class OutputFormat
 		new(
 			context,
 			context.GetRouteData(),
-			context.GetEndpoint()?.Metadata.GetMetadata<ControllerActionDescriptor>()!
+			new ControllerActionDescriptor()
 		);
 }
