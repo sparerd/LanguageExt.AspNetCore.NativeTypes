@@ -22,5 +22,15 @@ public class EffController
 	public Eff<RecordWithOptions> ReturnsComplexType() => SuccessEff(new RecordWithOptions(5, None));
 
 	[HttpGet]
+	public Eff<TestRuntime, RecordWithOptions> NeedsSpecificRuntime() => 
+		Eff<TestRuntime, RecordWithOptions>(rt => new RecordWithOptions(rt.Val1, None));
+
+	[HttpGet]
+	public Eff<RT, RecordWithOptions> NeedsRuntimeWithTrait<RT>()
+		where RT : struct, HasSubsystem<RT> =>
+		from sub in Subsystem<RT>.CallSubFunction()
+		select new RecordWithOptions(sub, None);
+
+	[HttpGet]
 	public Eff<int> ReturnsDefaultEffect() => default;
 }

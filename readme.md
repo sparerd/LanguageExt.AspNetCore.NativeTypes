@@ -206,6 +206,74 @@ services
     .AddEffAffEndpointSupport(unwrapper)
 ```
 
+### Using Runtimes
+You can also return `Eff`/`Aff` types which use runtimes from controllers. Doing so requires a little more setup to tell the library how to create the runtime for each call.
+
+*We will use the following simple runtime in our examples. For more information on creating and using runtimes, see [this wiki article](https://github.com/louthy/language-ext/wiki/How-to-deal-with-side-effects#setting-up-your-application-to-work-with-runtimes).*
+```csharp
+// ###########################
+// EXAMPLE RUNTIME DEFINITIONS
+// ###########################
+
+// Subsystem interface
+public interface UsersIO
+{
+    Task<User> FindUser(Func<User, bool> predicate);
+}
+
+// Trait for our subsystem
+public interface HasUsers<RT>
+    where RT : struct, HasUsers<RT>
+{
+    Eff<RT, UsersIO> UsersEff { get; }
+}
+
+// Convenience functions
+public static class Users<RT>
+    where RT : struct, HasUsers<RT>, HasCancel<RT>
+{
+    public static Aff<RT, User> FindUser(Func<User, bool> predicate) =>
+        default(RT).UsersEff.MapAsync(async io => await io.FindUser(predicate));
+}
+
+// Live runtime definition
+public readonly struct Runtime : HasCancel<Runtime>, HasUsers<Runtime>
+{
+    // omitting implementation
+}
+```
+
+When setting up Eff/Aff endpoint support in your startup functions, add a call to the overload which requests a `runtimeProvider` function. This function will give you an instance of the `IServiceProvider` in case you need access to any configured services when constructing your runtime.
+
+Each call to `AddEffAffEndpointSupport` adds support for one more runtime type. Calling the non-generic `AddEffAffEndpointSupport` adds handlers for the unital runtime (no-runtime `Eff<A>`), with each generic call setting up support for a different runtime (`Eff<RT1, A>`, `Eff<RT2, A>`, etc). If you intend to always use a runtime, you can safely omit the call to the non-generic overload.
+```csharp
+Func<Fin<IActionResult>, IActionResult> unwrapper = ... ;
+
+services
+    .AddMvc()
+    .AddLanguageExtTypeSupport()
+    // Adds support for Eff<A> and Aff<A>
+    .AddEffAffEndpointSupport(unwrapper)
+    // Adds support for Eff<Runtime, A> and Aff<Runtime, A>
+    .AddEffAffEndpointSupport<Runtime>(
+        unwrapper: unwrapper, // If you have a custom unwrapper function, you should also provide that here
+        runtimeProvider: (IServiceProvider p) => new Runtime() // construct a new runtime or provide an existing one
+    )
+    // Adds support for Eff<OtherRuntime, A> and Aff<OtherRuntime, A>
+    .AddEffAffEndpointSupport<OtherRuntime>(
+        unwrapper: unwrapper, // If you have a custom unwrapper function, you should also provide that here
+        runtimeProvider: (IServiceProvider p) => new OtherRuntime()
+    )
+```
+
+Now we can use the runtime type in our controller method.
+```csharp
+[HttpGet("{id:guid}")]
+public Aff<Runtime, User> FindUser(Guid id) => Users<Runtime>.FindUser(user => user.Id == id);
+// => Success(User)  -> 200 Ok(User)
+// => Err            -> 500 InternalServerError -or- customized error handler
+```
+
 ## Option
 Returning an `Option<T>` from a controller method will convert `Some` to a 200 and return the value in the response and `None` becomes 404NotFound.
 

@@ -35,6 +35,6 @@ public class EffectOutputFormatter : IOutputFormatter
 
 	private Aff<Unit> Write(OutputFormatterWriteContext context) =>
 		from result in _runEffect(context)
-		from _1 in Aff(() => result.ExecuteResultAsync(BuildActionContext(context.HttpContext)).ToUnit().ToValue())
+		from _ in ExecuteResult(result, context.HttpContext)
 		select unit;
 }

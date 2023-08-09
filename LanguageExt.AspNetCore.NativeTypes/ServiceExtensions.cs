@@ -4,6 +4,7 @@ using LanguageExt.AspNetCore.NativeTypes.JsonConversion.Seq;
 using LanguageExt.AspNetCore.NativeTypes.ModelBinders.Option;
 using LanguageExt.AspNetCore.NativeTypes.ModelBinders.Seq;
 using LanguageExt.AspNetCore.NativeTypes.OutputFormatters;
+using LanguageExt.Effects.Traits;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
@@ -68,13 +69,66 @@ public static class ServiceExtensions
 	) =>
 		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper));
 
+	public static IMvcBuilder AddEffAffEndpointSupport<RT>(
+		this IMvcBuilder builder,
+		Func<IServiceProvider, RT> runtimeProvider
+	) where RT : struct, HasCancel<RT> =>
+		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(DefaultErrorHandler, runtimeProvider));
+
+	public static IMvcCoreBuilder AddEffAffEndpointSupport<RT>(
+		this IMvcCoreBuilder builder,
+		Func<IServiceProvider, RT> runtimeProvider
+	) where RT : struct, HasCancel<RT> =>
+		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(DefaultErrorHandler, runtimeProvider));
+
+	public static IMvcBuilder AddEffAffEndpointSupport<RT>(
+		this IMvcBuilder builder,
+		Func<Fin<IActionResult>, IActionResult> unwrapper,
+		Func<IServiceProvider, RT> runtimeProvider
+	) where RT : struct, HasCancel<RT> => 
+		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper, runtimeProvider));
+
+	public static IMvcCoreBuilder AddEffAffEndpointSupport<RT>(
+		this IMvcCoreBuilder builder,
+		Func<Fin<IActionResult>, IActionResult> unwrapper,
+		Func<IServiceProvider, RT> runtimeProvider
+	) where RT : struct, HasCancel<RT> =>
+		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper, runtimeProvider));
+
 	public static MvcOptions AddEffAffEndpointSupport(
 		this MvcOptions options,
 		Func<Fin<IActionResult>, IActionResult> unwrapper)
 	{
-		options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetEffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Eff<>))));
-		options.OutputFormatters.Insert(0, new EffectOutputFormatter(ctx => GetAffResult(unwrapper, ctx), type => type.IsGenericType(typeof(Aff<>))));
+		// Eff<A>
+		options.OutputFormatters.Insert(0, new EffectOutputFormatter(
+			ctx => GetEffResult(unwrapper, ctx), 
+			type => type.IsGenericType(typeof(Eff<>))));
+
+		// Aff<A>
+		options.OutputFormatters.Insert(0, new EffectOutputFormatter(
+			ctx => GetAffResult(unwrapper, ctx), 
+			type => type.IsGenericType(typeof(Aff<>))));
+
 		options.OutputFormatters.Insert(0, new OptionOutputFormatter());
+		return options;
+	}
+
+	public static MvcOptions AddEffAffEndpointSupport<RT>(
+		this MvcOptions options,
+		Func<Fin<IActionResult>, IActionResult> unwrapper,
+		Func<IServiceProvider, RT> runtimeProvider
+	) where RT : struct, HasCancel<RT>
+	{
+		// Eff<RT, A>
+		options.OutputFormatters.Insert(0, new EffectOutputFormatter(
+			ctx => GetEffRuntimeResult(unwrapper, runtimeProvider, ctx),
+			type => type.IsGenericType(typeof(Eff<,>))));
+
+		// Aff<RT, A>
+		options.OutputFormatters.Insert(0, new EffectOutputFormatter(
+			ctx => GetAffRuntimeResult(unwrapper, runtimeProvider, ctx),
+			type => type.IsGenericType(typeof(Aff<,>))));
+
 		return options;
 	}
 

@@ -18,7 +18,10 @@ public static class TestPrelude
 
 	public static WebApplication CreateWebHost() => CreateWebHost(new LanguageExtAspNetCoreOptions());
 
-	public static WebApplication CreateWebHost(LanguageExtAspNetCoreOptions options)
+	public static WebApplication CreateWebHost(LanguageExtAspNetCoreOptions options) =>
+		CreateWebHost(options, identity);
+
+	public static WebApplication CreateWebHost(LanguageExtAspNetCoreOptions options, Func<IMvcBuilder, IMvcBuilder> cfg)
 	{
 		var builder = WebApplication.CreateBuilder();
 		builder.Logging.SetMinimumLevel(LogLevel.Warning);
@@ -26,13 +29,14 @@ public static class TestPrelude
 		builder.WebHost
 			.ConfigureServices(services =>
 			{
-				services
-					.AddMvc()
-					.AddApplicationPart(typeof(TestPrelude).Assembly)
-					.AddLanguageExtTypeSupport(options)
-					.AddEffAffEndpointSupport()
-					.AddJsonOptions(o => o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
-					;
+				cfg(
+					services
+						.AddMvc()
+						.AddApplicationPart(typeof(TestPrelude).Assembly)
+						.AddLanguageExtTypeSupport(options)
+						.AddEffAffEndpointSupport()
+						.AddJsonOptions(o => o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
+					);
 			}); 
 		var app = builder.Build();
 		app.MapControllers();
