@@ -1,72 +1,70 @@
-﻿using System.Text.Json;
-using FluentAssertions;
-using LanguageExt.AspNetCore.NativeTypes.JsonConversion.Seq;
+﻿using FluentAssertions;
 using NUnit.Framework;
-using static System.Text.Json.JsonSerializer;
 using static LanguageExt.Prelude;
 
-namespace LanguageExt.AspNetCore.NativeTypes.Tests.JsonConversion
+namespace LanguageExt.AspNetCore.NativeTypes.Tests.JsonConversion;
+
+[TestFixtureSource(typeof(JsonRuntimes), nameof(JsonRuntimes.GetRuntimes))]
+public class SeqJsonConverterTests
 {
-	public class SeqJsonConverterTests
+	private readonly Func<object, string> _serialize;
+	private readonly Func<string, Seq<int>> _deserialize;
+
+	public SeqJsonConverterTests(JsonRuntime json)
 	{
-		private readonly JsonSerializerOptions _serializerOptions;
+		var opts = new JsonOpts(true);
+		_serialize = json.Serialize(opts);
+		_deserialize = s => (Seq<int>)json.Deserialize(opts)(typeof(Seq<int>), s);
+	}
 
-		public SeqJsonConverterTests()
-		{
-			_serializerOptions = new JsonSerializerOptions();
-			_serializerOptions.Converters.Add(new LangExtCollectionJsonConverterFactory());
-		}
+	[Test]
+	public void Serialize_SeqEmpty()
+	{
+		_serialize(Empty).Should().Be("[]");
+	}
 
-		[Test]
-		public void Serialize_SeqEmpty()
-		{
-			Serialize(Empty, _serializerOptions)
-				.Should().Be("[]");
-		}
+	[Test]
+	public void Serialize_Empty()
+	{
+		_serialize(Seq<int>.Empty)
+			.Should().Be("[]");
+	}
 
-		[Test]
-		public void Serialize_Empty()
-		{
-			Serialize(Seq<int>.Empty, _serializerOptions)
-				.Should().Be("[]");
-		}
+	[Test]
+	public void Serialize_Single()
+	{
+		_serialize(Seq1(6))
+			.Should().Be("[6]");
+	}
 
-		[Test]
-		public void Serialize_Single()
-		{
-			Serialize(Seq1(6), _serializerOptions)
-				.Should().Be("[6]");
-		}
+	[Test]
+	public void Serialize_Multiple()
+	{
+		_serialize(Seq(1, 2, 3))
+			.Should().Be("[1,2,3]");
+	}
 
-		[Test]
-		public void Serialize_Multiple()
-		{
-			Serialize(Seq(1, 2, 3), _serializerOptions)
-				.Should().Be("[1,2,3]");
-		}
+	[Test]
+	public void Deserialize_Empty()
+	{
+		_deserialize("[]")
+			.Should().BeOfType<Seq<int>>()
+			.Which.Should().BeEmpty();
+	}
 
-		[Test]
-		public void Deserialize_Empty()
-		{
-			Deserialize<Seq<int>>("[]", _serializerOptions)
-				.Should().BeOfType<Seq<int>>()
-				.Which.Should().BeEmpty();
-		}
+	[Test]
+	public void Deserialize_Single()
+	{
+		_deserialize("[5]")
+			.Should().BeOfType<Seq<int>>()
+			.Which.Should().BeEquivalentTo(Seq1(5));
+	}
 
-		[Test]
-		public void Deserialize_Single()
-		{
-			Deserialize<Seq<int>>("[5]", _serializerOptions)
-				.Should().BeOfType<Seq<int>>()
-				.Which.Should().BeEquivalentTo(Seq1(5));
-		}
-
-		[Test]
-		public void Deserialize_Multiple()
-		{
-			Deserialize<Seq<int>>("[1,2,3]", _serializerOptions)
-				.Should().BeOfType<Seq<int>>()
-				.Which.Should().BeEquivalentTo(Seq(1, 2, 3));
-		}
+	[Test]
+	public void Deserialize_Multiple()
+	{
+		_deserialize("[1,2,3]")
+			.Should().BeOfType<Seq<int>>()
+			.Which.Should().BeEquivalentTo(Seq(1, 2, 3));
 	}
 }

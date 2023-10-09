@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Flurl.Http;
+using LanguageExt.AspNetCore.NativeTypes.JsonConversion;
 using LanguageExt.AspNetCore.NativeTypes.Tests.Models;
 using Microsoft.AspNetCore.Builder;
 using NUnit.Framework;
@@ -12,7 +13,7 @@ namespace LanguageExt.AspNetCore.NativeTypes.Tests.ModelBinders;
 public class LstModelBinderTests
 {
 	private WebApplication _app;
-	private LanguageExtAspNetCoreOptions _opts;
+	private LanguageExtJsonOptions _jsonOpts;
 	private readonly string _basePath;
 	private const string Controller = "lst";
 
@@ -24,11 +25,11 @@ public class LstModelBinderTests
 	[SetUp]
 	public async Task Setup()
 	{
-		_opts = new LanguageExtAspNetCoreOptions
+		_jsonOpts = new LanguageExtJsonOptions
 		{
 			OptionSerializationStrategy = OptionSerializationStrategy.AsNullable,
 		};
-		_app = CreateWebHost(_opts);
+		_app = CreateWebHost(_jsonOpts);
 		await _app.StartAsync();
 	}
 

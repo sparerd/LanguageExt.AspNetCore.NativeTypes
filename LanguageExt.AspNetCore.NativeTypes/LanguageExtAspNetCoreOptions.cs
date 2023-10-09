@@ -8,11 +8,6 @@ namespace LanguageExt.AspNetCore.NativeTypes;
 public record LanguageExtAspNetCoreOptions
 {
 	/// <summary>
-	/// Controls how <see cref="Option{A}"/> types are serialized to JSON.
-	/// </summary>
-	public OptionSerializationStrategy OptionSerializationStrategy { get; init; }
-
-	/// <summary>
 	/// Optional additional <see cref="IModelBinderProvider"/> instances to
 	/// inject along with those provided by this library. Providers are added
 	/// in stack order, meaning the last provider in this list will be the first

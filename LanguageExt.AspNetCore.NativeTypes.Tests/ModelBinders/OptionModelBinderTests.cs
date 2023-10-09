@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using FluentAssertions;
 using Flurl.Http;
+using LanguageExt.AspNetCore.NativeTypes.JsonConversion;
 using LanguageExt.AspNetCore.NativeTypes.Tests.Models;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -15,7 +16,7 @@ namespace LanguageExt.AspNetCore.NativeTypes.Tests.ModelBinders;
 public class OptionModelBinderTests
 {
 	private WebApplication _app;
-	private LanguageExtAspNetCoreOptions _opts;
+	private LanguageExtJsonOptions _jsonOpts;
 	private readonly string _basePath;
 	private const string Controller = "option";
 
@@ -27,18 +28,18 @@ public class OptionModelBinderTests
 	[SetUp]
 	public async Task Setup()
 	{
-		_opts = new LanguageExtAspNetCoreOptions
+		_jsonOpts = new LanguageExtJsonOptions
 		{
 			OptionSerializationStrategy = OptionSerializationStrategy.AsNullable,
 		};
-		_app = CreateWebHost(_opts);
+		_app = CreateWebHost(_jsonOpts);
 		SetupMinimalApis(_app);
 		await _app.StartAsync();
 	}
 
 	private void SetupMinimalApis(WebApplication app)
 	{
-		IResult Json(object value) => Results.Json(value, new JsonSerializerOptions().AddLanguageExtSupport(_opts));
+		IResult Json(object value) => Results.Json(value, new JsonSerializerOptions().AddLanguageExtSupport(_jsonOpts));
 
 		app.MapPost($"/{MINIMAL_API_SOURCE}/{Controller}/body", ([FromBody] Option<int> num) => Json(Increment(num)));
 		app.MapPost($"/{MINIMAL_API_SOURCE}/{Controller}/body/complex", ([FromBody] RecordWithOptions value) =>

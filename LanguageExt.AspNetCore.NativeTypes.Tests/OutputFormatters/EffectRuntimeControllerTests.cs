@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using FluentAssertions.Execution;
 using Flurl.Http;
+using LanguageExt.AspNetCore.NativeTypes.JsonConversion;
 using LanguageExt.AspNetCore.NativeTypes.Tests.Controllers;
 using LanguageExt.AspNetCore.NativeTypes.Tests.Models;
 using Microsoft.AspNetCore.Builder;
@@ -15,6 +16,7 @@ public class EffectRuntimeControllerTests
 {
 	private WebApplication _app;
 	private LanguageExtAspNetCoreOptions _opts;
+	private LanguageExtJsonOptions _jsonOpts;
 	private readonly string _basePath;
 	private readonly string _controller;
 	private const int RuntimeVal1 = 13;
@@ -36,11 +38,12 @@ public class EffectRuntimeControllerTests
 	[SetUp]
 	public async Task Setup()
 	{
-		_opts = new LanguageExtAspNetCoreOptions
+		_opts = new LanguageExtAspNetCoreOptions();
+		_jsonOpts = new LanguageExtJsonOptions
 		{
 			OptionSerializationStrategy = OptionSerializationStrategy.AsNullable,
 		};
-		_app = CreateWebHost(_opts, 
+		_app = CreateWebHost(_opts, _jsonOpts,
 			builder => builder
 				.AddEffAffEndpointSupport(
 					runtimeProvider: _ => new TestRuntime(RuntimeVal1, RuntimeSubVal)

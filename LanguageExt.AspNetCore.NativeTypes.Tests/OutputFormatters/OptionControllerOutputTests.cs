@@ -1,6 +1,7 @@
 ﻿using FluentAssertions;
 using FluentAssertions.Execution;
 using Flurl.Http;
+using LanguageExt.AspNetCore.NativeTypes.JsonConversion;
 using LanguageExt.AspNetCore.NativeTypes.Tests.Controllers;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
@@ -13,7 +14,7 @@ namespace LanguageExt.AspNetCore.NativeTypes.Tests.OutputFormatters;
 public class OptionControllerOutputTests
 {
 	private WebApplication _app;
-	private LanguageExtAspNetCoreOptions _opts;
+	private LanguageExtJsonOptions _jsonOpts;
 	private readonly string _basePath;
 	private const string Controller = "OptionOutput";
 
@@ -25,11 +26,11 @@ public class OptionControllerOutputTests
 	[SetUp]
 	public async Task Setup()
 	{
-		_opts = new LanguageExtAspNetCoreOptions
+		_jsonOpts = new LanguageExtJsonOptions
 		{
 			OptionSerializationStrategy = OptionSerializationStrategy.AsNullable,
 		};
-		_app = CreateWebHost(_opts);
+		_app = CreateWebHost(_jsonOpts);
 		await _app.StartAsync();
 	}
 

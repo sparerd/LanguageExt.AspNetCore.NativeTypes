@@ -1,36 +1,35 @@
-﻿using System.Text.Json;
-using FluentAssertions;
+﻿using FluentAssertions;
 using FluentAssertions.LanguageExt;
-using LanguageExt.AspNetCore.NativeTypes.JsonConversion.Option;
 using NUnit.Framework;
-using static System.Text.Json.JsonSerializer;
 using static LanguageExt.Prelude;
 
 namespace LanguageExt.AspNetCore.NativeTypes.Tests.JsonConversion;
 
+[TestFixtureSource(typeof(JsonRuntimes), nameof(JsonRuntimes.GetRuntimes))]
 public class OptionAsNullableJsonConverterTests
 {
-	private readonly JsonSerializerOptions _serializerOptions;
+	private readonly Func<object, string> _serialize;
+	private readonly Func<string, Option<int>> _deserialize;
 
-	public OptionAsNullableJsonConverterTests()
+	public OptionAsNullableJsonConverterTests(JsonRuntime json)
 	{
-		_serializerOptions = new JsonSerializerOptions();
-		_serializerOptions.Converters.Add(new OptionAsNullableJsonConverterFactory());
+		var opts = new JsonOpts(true);
+		_serialize = json.Serialize(opts);
+		_deserialize = s => (Option<int>)json.Deserialize(opts)(typeof(Option<int>), s);
 	}
 
 	[TestCase(3, ExpectedResult = @"3")]
 	[TestCase(0, ExpectedResult = @"0")]
 	[TestCase(-47, ExpectedResult = @"-47")]
-	public string Serialize_Some_Correctly(int value) => Serialize(Some(value), _serializerOptions);
+	public string Serialize_Some_Correctly(int value) => _serialize(Some(value));
 
 	[Test]
-	public void Serialize_None_Correctly() => Serialize(None, _serializerOptions).Should().Be("null");
+	public void Serialize_None_Correctly() => _serialize(None).Should().Be("null");
 
 	[Test]
 	public void Deserialize_Some_Correctly() =>
-		Deserialize<Option<int>>("3", _serializerOptions)
-			.Should().BeSome().Which.Should().Be(3);
+		_deserialize("3").Should().BeSome().Which.Should().Be(3);
 		
 	[TestCase("null")]
-	public void Deserialize_None_Correctly(string json) => Deserialize<Option<int>>(json, _serializerOptions).Should().BeNone();
+	public void Deserialize_None_Correctly(string json) => _deserialize(json).Should().BeNone();
 }

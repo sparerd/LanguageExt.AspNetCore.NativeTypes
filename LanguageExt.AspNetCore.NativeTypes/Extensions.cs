@@ -6,7 +6,7 @@ namespace LanguageExt.AspNetCore.NativeTypes;
 
 public static class Extensions
 {
-	internal static bool IsGenericType(this Type t, Type genericTypeDefinition) => 
+	public static bool IsGenericType(this Type t, Type genericTypeDefinition) => 
 		t.IsGenericType && 
 		t.GetGenericTypeDefinition() == genericTypeDefinition;
 
