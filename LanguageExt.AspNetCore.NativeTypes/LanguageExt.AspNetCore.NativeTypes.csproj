@@ -5,7 +5,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>0.0.1</Version>
+    <Version>0.0.2</Version>
 
     <!-- Nuget Package Settings -->
     <PackageId>LanguageExt.AspNetCore.NativeTypes</PackageId>
@@ -16,13 +16,11 @@
       - Enables controlling System.Text.Json conversion of LanguageExt types
     </Description>
     <PackageReleaseNotes>
-      ## [0.0.1] - 2023-06-27
+      ## [0.0.2] - 2023-08-04
       ### Added
-      - Added support for returning Eff/Aff from controller methods
-      - Added support for returning Option from controller methods
-      - Added configurable JSON serialization for Option types
-      - Added model binding support for Option in controllers
-      - Added model binding support for Seq and Lst in controllers
+      - Added support for configuring this library from IMvcCoreBuild instances
+      ### Changed
+      - Improved API for configuring features of this library
     </PackageReleaseNotes>
     <Authors>David Sparer</Authors>
     <PackageProjectUrl>https://github.com/sparerd/LanguageExt.AspNetCore.NativeTypes</PackageProjectUrl>
