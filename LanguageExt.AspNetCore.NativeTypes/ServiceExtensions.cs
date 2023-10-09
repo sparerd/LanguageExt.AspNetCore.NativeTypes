@@ -1,13 +1,7 @@
-using LanguageExt.AspNetCore.NativeTypes.JsonConversion;
-using LanguageExt.AspNetCore.NativeTypes.ModelBinders.Option;
-using LanguageExt.AspNetCore.NativeTypes.ModelBinders.Seq;
-using LanguageExt.AspNetCore.NativeTypes.OutputFormatters;
-using LanguageExt.Effects.Traits;
+﻿using LanguageExt.AspNetCore.NativeTypes.JsonConversion;
+using LanguageExt.AspNetCore.NativeTypes.ModelBinders;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.ModelBinding;
-using Microsoft.AspNetCore.Mvc.ModelBinding.Binders;
 using Microsoft.Extensions.DependencyInjection;
-using static LanguageExt.AspNetCore.NativeTypes.OutputFormatters.OutputFormat;
 using static LanguageExt.Prelude;
 
 namespace LanguageExt.AspNetCore.NativeTypes;
@@ -15,209 +9,170 @@ namespace LanguageExt.AspNetCore.NativeTypes;
 public static class ServiceExtensions
 {
 	/// <summary>
-	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
-	/// controller endpoint methods directly.
-	/// Uses the default exception handling logic to convert failures into <see cref="IActionResult"/>.
+	/// Configure integration options for using LanguageExt in ASP.Net Core.
 	/// </summary>
 	/// <param name="builder"></param>
-	/// <returns></returns>
-	public static IMvcBuilder AddEffAffEndpointSupport(this IMvcBuilder builder) =>
-		AddEffAffEndpointSupport(builder, DefaultErrorHandler);
-
-	/// <summary>
-	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
-	/// controller endpoint methods directly.
-	/// Uses the default exception handling logic to convert failures into <see cref="IActionResult"/>.
-	/// </summary>
-	/// <param name="builder"></param>
-	/// <returns></returns>
-	public static IMvcCoreBuilder AddEffAffEndpointSupport(this IMvcCoreBuilder builder) =>
-		AddEffAffEndpointSupport(builder, DefaultErrorHandler);
-
-	/// <summary>
-	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
-	/// controller endpoint methods directly.
-	/// </summary>
-	/// <param name="builder"></param>
-	/// <param name="unwrapper">
-	/// A custom unwrapping function to convert <see cref="Fin{A}"/> to <see cref="IActionResult"/>.
-	/// Use this to customize how failures are converted into <see cref="IActionResult"/>.
+	/// <param name="configure">
+	/// Fluent builder for configuring integration options
 	/// </param>
 	/// <returns></returns>
-	public static IMvcCoreBuilder AddEffAffEndpointSupport(
-		this IMvcCoreBuilder builder,
-		Func<Fin<IActionResult>, IActionResult> unwrapper
-	) =>
-		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper));
-
-	/// <summary>
-	/// Provides support for returning <see cref="Eff{A}"/> or <see cref="Aff{A}"/> types from
-	/// controller endpoint methods directly.
-	/// </summary>
-	/// <param name="builder"></param>
-	/// <param name="unwrapper">
-	/// A custom unwrapping function to convert <see cref="Fin{A}"/> to <see cref="IActionResult"/>.
-	/// Use this to customize how failures are converted into <see cref="IActionResult"/>.
-	/// </param>
-	/// <returns></returns>
-	public static IMvcBuilder AddEffAffEndpointSupport(
+	/// <exception cref="ArgumentNullException"></exception>
+	public static IMvcBuilder AddLanguageExtTypeSupport(
 		this IMvcBuilder builder,
-		Func<Fin<IActionResult>, IActionResult> unwrapper
-	) =>
-		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper));
-
-	public static IMvcBuilder AddEffAffEndpointSupport<RT>(
-		this IMvcBuilder builder,
-		Func<IServiceProvider, RT> runtimeProvider
-	) where RT : struct, HasCancel<RT> =>
-		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(DefaultErrorHandler, runtimeProvider));
-
-	public static IMvcCoreBuilder AddEffAffEndpointSupport<RT>(
-		this IMvcCoreBuilder builder,
-		Func<IServiceProvider, RT> runtimeProvider
-	) where RT : struct, HasCancel<RT> =>
-		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(DefaultErrorHandler, runtimeProvider));
-
-	public static IMvcBuilder AddEffAffEndpointSupport<RT>(
-		this IMvcBuilder builder,
-		Func<Fin<IActionResult>, IActionResult> unwrapper,
-		Func<IServiceProvider, RT> runtimeProvider
-	) where RT : struct, HasCancel<RT> => 
-		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper, runtimeProvider));
-
-	public static IMvcCoreBuilder AddEffAffEndpointSupport<RT>(
-		this IMvcCoreBuilder builder,
-		Func<Fin<IActionResult>, IActionResult> unwrapper,
-		Func<IServiceProvider, RT> runtimeProvider
-	) where RT : struct, HasCancel<RT> =>
-		builder.AddMvcOptions(options => options.AddEffAffEndpointSupport(unwrapper, runtimeProvider));
-
-	public static MvcOptions AddEffAffEndpointSupport(
-		this MvcOptions options,
-		Func<Fin<IActionResult>, IActionResult> unwrapper)
+		Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder> configure)
 	{
-		// Eff<A>
-		options.OutputFormatters.Insert(0, new EffectOutputFormatter(
-			ctx => GetEffResult(unwrapper, ctx), 
-			type => type.IsGenericType(typeof(Eff<>))));
+		_ = configure ?? throw new ArgumentNullException(nameof(configure));
 
-		// Aff<A>
-		options.OutputFormatters.Insert(0, new EffectOutputFormatter(
-			ctx => GetAffResult(unwrapper, ctx), 
-			type => type.IsGenericType(typeof(Aff<>))));
-
-		options.OutputFormatters.Insert(0, new OptionOutputFormatter());
-		return options;
-	}
-
-	public static MvcOptions AddEffAffEndpointSupport<RT>(
-		this MvcOptions options,
-		Func<Fin<IActionResult>, IActionResult> unwrapper,
-		Func<IServiceProvider, RT> runtimeProvider
-	) where RT : struct, HasCancel<RT>
-	{
-		// Eff<RT, A>
-		options.OutputFormatters.Insert(0, new EffectOutputFormatter(
-			ctx => GetEffRuntimeResult(unwrapper, runtimeProvider, ctx),
-			type => type.IsGenericType(typeof(Eff<,>))));
-
-		// Aff<RT, A>
-		options.OutputFormatters.Insert(0, new EffectOutputFormatter(
-			ctx => GetAffRuntimeResult(unwrapper, runtimeProvider, ctx),
-			type => type.IsGenericType(typeof(Aff<,>))));
-
-		return options;
+		var config = configure(LanguageExtMvcBuilder.Empty);
+		config.Transform(builder.Services);
+		return builder;
 	}
 
 	/// <summary>
-	/// 
+	/// Configure integration options for using LanguageExt in ASP.Net Core.
 	/// </summary>
+	/// <param name="builder"></param>
+	/// <param name="configure">
+	/// Fluent builder for configuring integration options
+	/// </param>
+	/// <returns></returns>
+	/// <exception cref="ArgumentNullException"></exception>
+	public static IMvcCoreBuilder AddLanguageExtTypeSupport(
+		this IMvcCoreBuilder builder,
+		Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder> configure)
+	{
+		_ = configure ?? throw new ArgumentNullException(nameof(configure));
+
+		var config = configure(LanguageExtMvcBuilder.Empty);
+		config.Transform(builder.Services);
+		return builder;
+	}
+
+	/// <summary>
+	/// Configures default integration options for using LanguageExt in ASP.Net Core.
+	/// </summary>
+	/// <remarks>
+	/// The same as calling this method with a custom configuration of:<br/>
+	/// <code>
+	/// builder => builder
+	///   .AddModelBindingSupport(default)
+	///   .AddSystemTextJsonSupport(default)
+	/// </code>
+	/// </remarks>
 	/// <param name="builder"></param>
 	/// <returns></returns>
 	public static IMvcBuilder AddLanguageExtTypeSupport(this IMvcBuilder builder) =>
-		AddLanguageExtTypeSupport(builder, new LanguageExtAspNetCoreOptions());
+		builder.AddLanguageExtTypeSupport(_ => LanguageExtMvcBuilder.Default);
 
 	/// <summary>
-	/// 
+	/// Configures default integration options for using LanguageExt in ASP.Net Core.
 	/// </summary>
+	/// <remarks>
+	/// The same as calling this method with a custom configuration of:<br/>
+	/// <code>
+	/// builder => builder
+	///   .AddModelBindingSupport(default)
+	///   .AddSystemTextJsonSupport(default)
+	/// </code>
+	/// </remarks>
 	/// <param name="builder"></param>
-	/// <param name="langExtOptions"></param>
-	/// <exception cref="ArgumentOutOfRangeException"></exception>
 	/// <returns></returns>
+	public static IMvcCoreBuilder AddLanguageExtTypeSupport(this IMvcCoreBuilder builder) =>
+		builder.AddLanguageExtTypeSupport(_ => LanguageExtMvcBuilder.Default);
+
+	[Obsolete("Use the overloads which take a Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder>")]
 	public static IMvcBuilder AddLanguageExtTypeSupport(
 		this IMvcBuilder builder,
-		LanguageExtAspNetCoreOptions langExtOptions
+		LanguageExtAspNetCoreOptions options
+	) =>
+		AddLanguageExtTypeSupport(
+			builder,
+			options,
+			new LanguageExtJsonOptions());
+
+	[Obsolete("Use the overloads which take a Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder>")]
+	public static IMvcBuilder AddLanguageExtTypeSupport(
+		this IMvcBuilder builder,
+		LanguageExtJsonOptions jsonOptions
+	) =>
+		AddLanguageExtTypeSupport(
+			builder,
+			new LanguageExtAspNetCoreOptions(),
+			jsonOptions);
+
+	[Obsolete("Use the overloads which take a Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder>")]
+	public static IMvcBuilder AddLanguageExtTypeSupport(
+		this IMvcBuilder builder,
+		LanguageExtAspNetCoreOptions langExtOptions,
+		LanguageExtJsonOptions jsonOptions
 	) =>
 		AddTypeSupport(
 			builder.Services,
 			cfg => ignore(builder.AddMvcOptions(cfg)),
 			opts => ignore(builder.AddJsonOptions(opts)),
-			langExtOptions
+			langExtOptions,
+			jsonOptions
 		).Return(builder);
 
-	public static IMvcCoreBuilder AddLanguageExtTypeSupport(this IMvcCoreBuilder builder) =>
-		AddLanguageExtTypeSupport(builder, new LanguageExtAspNetCoreOptions());
-
+	[Obsolete("Use the overloads which take a Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder>")]
 	public static IMvcCoreBuilder AddLanguageExtTypeSupport(
 		this IMvcCoreBuilder builder,
 		LanguageExtAspNetCoreOptions langExtOptions
 	) =>
+		AddLanguageExtTypeSupport(
+			builder,
+			langExtOptions,
+			new LanguageExtJsonOptions());
+
+	[Obsolete("Use the overloads which take a Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder>")]
+	public static IMvcCoreBuilder AddLanguageExtTypeSupport(
+		this IMvcCoreBuilder builder,
+		LanguageExtJsonOptions jsonOptions
+	) =>
+		AddLanguageExtTypeSupport(
+			builder,
+			new LanguageExtAspNetCoreOptions(),
+			jsonOptions);
+
+	/// <summary>
+	/// Adds support for serializing/deserializing LanguageExt types as well as
+	/// ASP.Net model binders.
+	/// </summary>
+	/// <param name="builder"></param>
+	/// <param name="langExtOptions"></param>
+	/// <param name="jsonOptions"></param>
+	/// <returns></returns>
+	[Obsolete("Use the overloads which take a Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder>")]
+	public static IMvcCoreBuilder AddLanguageExtTypeSupport(
+		this IMvcCoreBuilder builder,
+		LanguageExtAspNetCoreOptions langExtOptions,
+		LanguageExtJsonOptions jsonOptions
+	) =>
 		AddTypeSupport(
 			builder.Services,
 			cfg => ignore(builder.AddMvcOptions(cfg)),
 			opts => ignore(builder.AddJsonOptions(opts)),
-			langExtOptions
+			langExtOptions, 
+			jsonOptions
 		).Return(builder);
 
 	private static Unit AddTypeSupport(
 		IServiceCollection services,
 		Func<Action<MvcOptions>, Unit> mvcOptsConfig,
 		Func<Action<Microsoft.AspNetCore.Mvc.JsonOptions>, Unit> jsonCfg,
-		LanguageExtAspNetCoreOptions langExtOptions)
+		LanguageExtAspNetCoreOptions langExtOptions,
+		LanguageExtJsonOptions jsonOptions)
 	{
 		services.AddSingleton(langExtOptions);
-		ConfigureJson(services, jsonCfg, langExtOptions);
-		mvcOptsConfig(o => ConfigureModelBinders(langExtOptions, o.ModelBinderProviders));
+		services.AddSingleton(jsonOptions);
+		JsonServiceExtensions.ConfigureJson(jsonCfg, jsonOptions)(services);
+		ConfigureModelBinders(langExtOptions, mvcOptsConfig);
 		return unit;
 	}
 
-	private static void ConfigureJson(
-		IServiceCollection services,
-		Func<Action<Microsoft.AspNetCore.Mvc.JsonOptions>, Unit> jsonCfg,
-		LanguageExtAspNetCoreOptions langExtOptions)
-	{
-		void Conf(JsonSerializerOptions options) => options.AddLanguageExtSupport(langExtOptions);
-		
-		// Used by minimal api
-		services.Configure<JsonOptions>(o => Conf(o.SerializerOptions));
-
-		// Used by controllers
-		jsonCfg(o => Conf(o.JsonSerializerOptions));
-	}
-
-	private static Unit ConfigureModelBinders(LanguageExtAspNetCoreOptions options, IList<IModelBinderProvider> providers) =>
-		Seq<IModelBinderProvider>(
-				new OptionModelBinderProvider(),
-				new SeqModelBinderProvider()
-			)
-			.Append(options.AdditionalModelBinderProviders)
-			.Map(InsertProvider(providers, GetTargetInsertionProviderIndex(providers)))
-			.Consume();
-
-	/// <summary>
-	/// Insert new providers just after the last known generic provider (Headers)
-	/// This is a bit hacky and might be fragile, but the alternative is reimplementing
-	/// source provider logic.
-	/// https://github.com/dotnet/aspnetcore/blob/775b001508b2678426319b8cd27453fe90b0f250/src/Mvc/Mvc.Core/src/Infrastructure/MvcCoreMvcOptionsSetup.cs#L51
-	/// </summary>
-	/// <param name="providers"></param>
-	/// <returns></returns>
-	private static int GetTargetInsertionProviderIndex(IEnumerable<IModelBinderProvider> providers) =>
-		providers
-			.Select(p => p.GetType().Name)
-			.TakeWhile(binderName => binderName != nameof(HeaderModelBinderProvider))
-			.Count() + 1;
-
-	private static Func<IModelBinderProvider, Unit> InsertProvider(IList<IModelBinderProvider> providers, int index) =>
-		provider => fun(() => providers.Insert(index, provider))();
+	public static Unit ConfigureModelBinders(
+		LanguageExtAspNetCoreOptions options,
+		Func<Action<MvcOptions>, Unit> mvcOptsConfig
+	) =>
+		mvcOptsConfig(o => ModelBinding.ConfigureModelBinders(options.AdditionalModelBinderProviders, o.ModelBinderProviders));
 }

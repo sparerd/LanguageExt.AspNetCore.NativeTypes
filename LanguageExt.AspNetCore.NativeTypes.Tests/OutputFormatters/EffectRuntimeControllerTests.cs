@@ -15,7 +15,6 @@ using static LanguageExt.Prelude;
 public class EffectRuntimeControllerTests
 {
 	private WebApplication _app;
-	private LanguageExtAspNetCoreOptions _opts;
 	private LanguageExtJsonOptions _jsonOpts;
 	private readonly string _basePath;
 	private readonly string _controller;
@@ -38,15 +37,16 @@ public class EffectRuntimeControllerTests
 	[SetUp]
 	public async Task Setup()
 	{
-		_opts = new LanguageExtAspNetCoreOptions();
 		_jsonOpts = new LanguageExtJsonOptions
 		{
 			OptionSerializationStrategy = OptionSerializationStrategy.AsNullable,
 		};
-		_app = CreateWebHost(_opts, _jsonOpts,
+		_app = CreateWebHost(
+			_jsonOpts,
 			builder => builder
 				.AddEffAffEndpointSupport(
-					runtimeProvider: _ => new TestRuntime(RuntimeVal1, RuntimeSubVal)
+					runtimeProvider: _ => new TestRuntime(RuntimeVal1, RuntimeSubVal),
+					unwrapper: default
 				)
 		);
 		await _app.StartAsync();

@@ -18,24 +18,14 @@ public static class TestPrelude
 	public static IEnumerable<string> EndpointBindingFixtureSource() => Seq1(CONTROLLER_SOURCE);
 
 	public static WebApplication CreateWebHost() => 
-		CreateWebHost(new LanguageExtAspNetCoreOptions(), new LanguageExtJsonOptions());
-
-	public static WebApplication CreateWebHost(LanguageExtAspNetCoreOptions o) => 
-		CreateWebHost(o, new LanguageExtJsonOptions());
-
-	public static WebApplication CreateWebHost(LanguageExtJsonOptions o) => 
-		CreateWebHost(new LanguageExtAspNetCoreOptions(), o);
+		CreateWebHost(new LanguageExtJsonOptions());
+	
+	public static WebApplication CreateWebHost(LanguageExtJsonOptions jsonOptions) =>
+		CreateWebHost(jsonOptions, identity);
 
 	public static WebApplication CreateWebHost(
-		LanguageExtAspNetCoreOptions options, 
-		LanguageExtJsonOptions jsonOptions
-	) =>
-		CreateWebHost(options, jsonOptions, identity);
-
-	public static WebApplication CreateWebHost(
-		LanguageExtAspNetCoreOptions options,
 		LanguageExtJsonOptions jsonOptions,
-		Func<IMvcBuilder, IMvcBuilder> cfg)
+		Func<LanguageExtMvcBuilder, LanguageExtMvcBuilder> cfg)
 	{
 		var builder = WebApplication.CreateBuilder();
 		builder.Logging.SetMinimumLevel(LogLevel.Warning);
@@ -43,14 +33,19 @@ public static class TestPrelude
 		builder.WebHost
 			.ConfigureServices(services =>
 			{
-				cfg(
-					services
-						.AddMvc()
-						.AddApplicationPart(typeof(TestPrelude).Assembly)
-						.AddLanguageExtTypeSupport(options, jsonOptions)
-						.AddEffAffEndpointSupport()
-						.AddJsonOptions(o => o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase)
-					);
+				services
+					.AddMvc()
+					.AddApplicationPart(typeof(TestPrelude).Assembly)
+					.AddLanguageExtTypeSupport(b =>
+						cfg(b
+							.AddModelBindingSupport(default)
+							.AddSystemTextJsonSupport(jsonOptions)
+							.AddEffAffEndpointSupport(default)
+						)
+					)
+					.AddJsonOptions(o => o.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase);
+
+				services.AddSingleton(jsonOptions);
 			}); 
 		var app = builder.Build();
 		app.MapControllers();
