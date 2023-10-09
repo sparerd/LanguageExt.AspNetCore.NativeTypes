@@ -1,11 +1,11 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Version>0.0.2</Version>
+    <Version>0.2.0</Version>
 
     <!-- Nuget Package Settings -->
     <PackageId>LanguageExt.AspNetCore.NativeTypes</PackageId>
@@ -16,7 +16,7 @@
       - Enables controlling System.Text.Json conversion of LanguageExt types
     </Description>
     <PackageReleaseNotes>
-      ## [0.0.2] - 2023-08-04
+      ## [0.2.0] - 2023-10-09
       ### Added
       - Added support for configuring this library from IMvcCoreBuild instances
       ### Changed
