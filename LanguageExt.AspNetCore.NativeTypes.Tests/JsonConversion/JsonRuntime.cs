@@ -1,7 +1,5 @@
 ﻿using System.Text.Json;
 using LanguageExt.AspNetCore.NativeTypes.JsonConversion;
-using LanguageExt.AspNetCore.NativeTypes.NewtonsoftJson;
-using Newtonsoft.Json;
 using static LanguageExt.AspNetCore.NativeTypes.JsonServiceExtensions;
 using JsonSerializer = System.Text.Json.JsonSerializer;
 
@@ -29,25 +27,11 @@ public static class JsonRuntimes
 					: OptionSerializationStrategy.AsArray,
 			});
 
-		JsonSerializerSettings GetNewtonsoftOptions(JsonOpts opts) =>
-			new JsonSerializerSettings()
-				.AddLanguageExtConverters(new LanguageExtJsonOptions
-				{
-					OptionSerializationStrategy = opts.OptionAsNullable
-						? OptionSerializationStrategy.AsNullable
-						: OptionSerializationStrategy.AsArray,
-				});
-
-		return Prelude.Seq(
+		return Prelude.Seq1(
 			new JsonRuntime(
 				"System.Text.Json",
 				opts => o => JsonSerializer.Serialize(o, GetSysTextJsonOptions(opts)),
 				opts => (type, json) => JsonSerializer.Deserialize(json, type, GetSysTextJsonOptions(opts))
-			),
-			new JsonRuntime(
-				"NewtonsoftJson",
-				opts => o => JsonConvert.SerializeObject(o, GetNewtonsoftOptions(opts)),
-				opts => (type, json) => JsonConvert.DeserializeObject(json, type, GetNewtonsoftOptions(opts))
 			)
 		);
 	}

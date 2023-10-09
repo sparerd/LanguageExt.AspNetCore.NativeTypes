@@ -20,7 +20,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\LanguageExt.AspNetCore.NativeTypes.NewtonsoftJson\LanguageExt.AspNetCore.NativeTypes.NewtonsoftJson.csproj" />
     <ProjectReference Include="..\LanguageExt.AspNetCore.NativeTypes\LanguageExt.AspNetCore.NativeTypes.csproj" />
   </ItemGroup>
 
